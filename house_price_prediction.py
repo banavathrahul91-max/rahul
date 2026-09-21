@@ -1,30 +1,5 @@
-"""
+
 House Price Prediction System
-
-This project demonstrates:
-1. Loading data with Pandas
-2. Handling missing values
-3. Feature engineering
-4. Encoding categorical variables
-5. Training a regression model
-6. Evaluating predictions with R² and MAE
-7. Creating a predicted-versus-actual comparison graph
-
-Expected input file: house_data.csv
-
-Recommended columns:
-- Area_sqft
-- Bedrooms
-- Bathrooms
-- Age_years
-- Location
-- Price
-
-If house_data.csv does not exist, a reproducible sample dataset is generated
-automatically so the project can run immediately.
-"""
-
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,19 +18,15 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 DATA_FILE = Path("house_data.csv")
 RANDOM_STATE = 42
 TARGET_COLUMN = "Price"
-
-
 def create_sample_dataset(rows: int = 250) -> pd.DataFrame:
     """Create a reproducible sample house-price dataset."""
     rng = np.random.default_rng(RANDOM_STATE)
     locations = np.array(["City Center", "Suburban", "Outskirts", "Near Metro"])
-
     area = rng.integers(500, 3500, rows)
     bedrooms = rng.integers(1, 6, rows)
     bathrooms = np.maximum(1, bedrooms - rng.integers(0, 2, rows))
     age = rng.integers(0, 31, rows)
     location = rng.choice(locations, rows)
-
     location_bonus = {
         "City Center": 180000,
         "Near Metro": 130000,
@@ -70,7 +41,6 @@ def create_sample_dataset(rows: int = 250) -> pd.DataFrame:
         + np.array([location_bonus[item] for item in location])
         + rng.normal(0, 65000, rows)
     )
-
     return pd.DataFrame(
         {
             "Area_sqft": area,
@@ -81,7 +51,6 @@ def create_sample_dataset(rows: int = 250) -> pd.DataFrame:
             "Price": np.maximum(price, 50000).round(2),
         }
     )
-
 
 def load_data() -> pd.DataFrame:
     """Load the dataset or create a sample dataset if needed."""
@@ -95,9 +64,7 @@ def load_data() -> pd.DataFrame:
 
     if TARGET_COLUMN not in data.columns:
         raise ValueError(f"The dataset must contain a '{TARGET_COLUMN}' column.")
-
-    return data.drop_duplicates().reset_index(drop=True)
-
+return data.drop_duplicates().reset_index(drop=True)
 
 def add_features(data: pd.DataFrame) -> pd.DataFrame:
     """Add useful derived features when the required source columns exist."""
@@ -108,13 +75,11 @@ def add_features(data: pd.DataFrame) -> pd.DataFrame:
         data["Bathrooms_per_Bedroom"] = data["Bathrooms"] / data["Bedrooms"].replace(0, np.nan)
     return data
 
-
 def build_preprocessor(features: pd.DataFrame) -> ColumnTransformer:
     """Build numeric and categorical preprocessing pipelines."""
     numeric_features = features.select_dtypes(include=np.number).columns.tolist()
     categorical_features = features.select_dtypes(exclude=np.number).columns.tolist()
-
-    numeric_pipeline = Pipeline(
+ numeric_pipeline = Pipeline(
         [
             ("imputer", SimpleImputer(strategy="median")),
             ("scaler", StandardScaler()),
@@ -134,26 +99,21 @@ def build_preprocessor(features: pd.DataFrame) -> ColumnTransformer:
         ]
     )
 
-
 def main() -> None:
     data = add_features(load_data())
-
     print("\nDataset shape:", data.shape)
     print("\nFirst five rows:\n", data.head())
     print("\nMissing values before preprocessing:\n", data.isnull().sum())
     print("\nDescriptive statistics:\n", data.describe(include="all"))
-
-    features = data.drop(columns=[TARGET_COLUMN])
+  features = data.drop(columns=[TARGET_COLUMN])
     target = data[TARGET_COLUMN]
-
     X_train, X_test, y_train, y_test = train_test_split(
         features,
         target,
         test_size=0.2,
         random_state=RANDOM_STATE,
     )
-
-    # Linear Regression is used as the main regression model.
+     Linear Regression is used as the main regression model.
     model = Pipeline(
         [
             ("preprocessor", build_preprocessor(features)),
@@ -162,16 +122,13 @@ def main() -> None:
     )
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
-
     mae = mean_absolute_error(y_test, predictions)
     rmse = np.sqrt(mean_squared_error(y_test, predictions))
     r2 = r2_score(y_test, predictions)
-
     print("\n=== House Price Prediction Results ===")
     print(f"Mean Absolute Error (MAE): {mae:,.2f}")
     print(f"Root Mean Squared Error (RMSE): {rmse:,.2f}")
     print(f"R² Score: {r2:.3f}")
-
     results = pd.DataFrame(
         {
             "Actual_Price": y_test.to_numpy(),
@@ -179,8 +136,8 @@ def main() -> None:
         }
     ).reset_index(drop=True)
     print("\nActual versus predicted prices:\n", results.head(10))
-
-    # Comparison graph required by the project objective.
+    
+Comparison graph required by the project objective.
     plt.figure(figsize=(9, 6))
     sns.scatterplot(data=results, x="Actual_Price", y="Predicted_Price", s=70)
     minimum = min(results["Actual_Price"].min(), results["Predicted_Price"].min())
@@ -194,11 +151,10 @@ def main() -> None:
     plt.savefig("house_price_comparison.png", dpi=150)
     plt.show()
 
-    # Predict one test house as an example.
+     Predict one test house as an example.
     example_house = X_test.iloc[[0]]
     example_prediction = model.predict(example_house)[0]
     print(f"\nExample predicted house price: {example_prediction:,.2f}")
-
 
 if __name__ == "__main__":
     main()
